@@ -5,11 +5,14 @@ import {
   AreaChart, Area
 } from "recharts";
 import Navbar from "../components/Navbar";
+import API from "../services/api";
 
 const COLORS = ["#1B4F8A", "#22c55e", "#f97316", "#ef4444", "#a855f7"];
 
 const AnalyticsPage = () => {
+  const [allControls, setAllControls] = useState([]);
   const [controls, setControls] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("ALL");
   const [statusData, setStatusData] = useState([]);
   const [riskData, setRiskData] = useState([]);
@@ -18,25 +21,39 @@ const AnalyticsPage = () => {
   const [kpis, setKpis] = useState({ total: 0, active: 0, overdue: 0, critical: 0, avgScore: 0, highRisk: 0 });
 
   useEffect(() => {
+    const fetchControls = async () => {
+      try {
+        const response = await API.get("/api/controls?size=100");
+        setAllControls(response.data.content || []);
+      } catch (err) {
+        console.error("Failed to fetch controls", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchControls();
+  }, []);
+
+ useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("controls")) || [];
     let filtered = stored;
     if (period === "ACTIVE") filtered = stored.filter((c) => c.status === "ACTIVE");
     else if (period === "OVERDUE") filtered = stored.filter((c) => c.status === "OVERDUE");
-    else if (period === "HIGH_RISK") filtered = stored.filter((c) => c.riskLevel === "HIGH" || c.riskLevel === "CRITICAL");
+    else if (period === "HIGH_RISK") filtered = stored.filter((c) => c.priority === "HIGH" || c.priority === "CRITICAL");
 
     setControls(filtered);
 
     const avgScore = filtered.length > 0
-      ? Math.round(filtered.reduce((sum, c) => sum + Number(c.score), 0) / filtered.length)
+      ? Math.round(filtered.reduce((sum, c) => sum + Number(c.riskScore), 0) / filtered.length)
       : 0;
 
     setKpis({
       total: filtered.length,
       active: filtered.filter((c) => c.status === "ACTIVE").length,
       overdue: filtered.filter((c) => c.status === "OVERDUE").length,
-      critical: filtered.filter((c) => c.riskLevel === "CRITICAL").length,
+      critical: filtered.filter((c) => c.priority === "CRITICAL").length,
       avgScore,
-      highRisk: filtered.filter((c) => c.riskLevel === "HIGH" || c.riskLevel === "CRITICAL").length,
+      highRisk: filtered.filter((c) => c.priority === "HIGH" || c.priority === "CRITICAL").length,
     });
 
     const statusMap = {};
@@ -44,17 +61,17 @@ const AnalyticsPage = () => {
     setStatusData(Object.keys(statusMap).map((key) => ({ name: key, count: statusMap[key] })));
 
     const riskMap = {};
-    filtered.forEach((c) => { riskMap[c.riskLevel] = (riskMap[c.riskLevel] || 0) + 1; });
+    filtered.forEach((c) => { riskMap[c.priority] = (riskMap[c.priority] || 0) + 1; });
     setRiskData(Object.keys(riskMap).map((key) => ({ name: key, value: riskMap[key] })));
 
     setScoreData(filtered.map((c) => ({
       name: c.title.length > 12 ? c.title.substring(0, 12) + "..." : c.title,
-      score: Number(c.score),
+      score: Number(c.riskScore),
       target: 80,
     })));
 
     const assigneeMap = {};
-    filtered.forEach((c) => { assigneeMap[c.assignedTo] = (assigneeMap[c.assignedTo] || 0) + 1; });
+    filtered.forEach((c) => { assigneeMap[c.owner] = (assigneeMap[c.owner] || 0) + 1; });
     setAssigneeData(Object.keys(assigneeMap).map((key) => ({
       name: key.length > 10 ? key.substring(0, 10) + "..." : key,
       controls: assigneeMap[key],
@@ -225,8 +242,8 @@ const AnalyticsPage = () => {
                     <tr className="bg-[#1B4F8A] text-white">
                       <th className="text-left px-4 py-2 rounded-tl-lg">Control</th>
                       <th className="text-left px-4 py-2">Status</th>
-                      <th className="text-left px-4 py-2">Risk</th>
-                      <th className="text-left px-4 py-2">Score</th>
+                      <th className="text-left px-4 py-2">Priority</th>
+                      <th className="text-left px-4 py-2">Risk Score</th>
                       <th className="text-left px-4 py-2 rounded-tr-lg">Health</th>
                     </tr>
                   </thead>
@@ -240,20 +257,20 @@ const AnalyticsPage = () => {
                           </span>
                         </td>
                         <td className="px-4 py-2">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${c.riskLevel === "CRITICAL" ? "bg-red-100 text-red-700" : c.riskLevel === "HIGH" ? "bg-orange-100 text-orange-700" : c.riskLevel === "MEDIUM" ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>
-                            {c.riskLevel}
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${c.priority === "CRITICAL" ? "bg-red-100 text-red-700" : c.priority === "HIGH" ? "bg-orange-100 text-orange-700" : c.priority === "MEDIUM" ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>
+                            {c.priority}
                           </span>
                         </td>
                         <td className="px-4 py-2">
                           <div className="flex items-center gap-2">
                             <div className="w-20 bg-gray-200 rounded-full h-2">
-                              <div className={`h-2 rounded-full ${c.score >= 80 ? "bg-green-500" : c.score >= 50 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${c.score}%` }} />
+                              <div className={`h-2 rounded-full ${c.riskScore >= 80 ? "bg-green-500" : c.riskScore >= 50 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${c.riskScore}%` }} />
                             </div>
-                            <span className="font-semibold text-gray-700">{c.score}</span>
+                            <span className="font-semibold text-gray-700">{c.riskScore}</span>
                           </div>
                         </td>
                         <td className="px-4 py-2 text-lg">
-                          {c.score >= 80 ? "✅" : c.score >= 50 ? "⚠️" : "❌"}
+                          {c.riskScore >= 80 ? "✅" : c.riskScore >= 50 ? "⚠️" : "❌"}
                         </td>
                       </tr>
                     ))}
