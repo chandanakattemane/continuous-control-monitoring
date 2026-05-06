@@ -29,19 +29,19 @@ const DetailPage = () => {
     return colors[status] || "bg-blue-100 text-blue-700";
   };
 
-  const getRiskBadge = (risk) => {
+  const getRiskBadge = (priority) => {
     const colors = {
       LOW: "bg-green-100 text-green-700 border border-green-300",
       MEDIUM: "bg-yellow-100 text-yellow-700 border border-yellow-300",
       HIGH: "bg-orange-100 text-orange-700 border border-orange-300",
       CRITICAL: "bg-red-100 text-red-700 border border-red-300",
     };
-    return colors[risk] || "bg-gray-100 text-gray-600";
+    return colors[priority] || "bg-gray-100 text-gray-600";
   };
 
-  const getScoreColor = (score) => {
-    if (score >= 80) return "bg-green-500";
-    if (score >= 50) return "bg-yellow-500";
+  const getScoreColor = (riskScore) => {
+    if (riskScore >= 80) return "bg-green-500";
+    if (riskScore >= 50) return "bg-yellow-500";
     return "bg-red-500";
   };
 
@@ -53,17 +53,17 @@ const DetailPage = () => {
     setTimeout(() => {
       setAiLoading(false);
       setAiResponse({
-        summary: `The control "${control.title}" is currently ${control.status} with a ${control.riskLevel} risk level and a compliance score of ${control.score}/100.`,
+        summary: `The control "${control.title}" is currently ${control.status} with a ${control.priority} priority level and a risk score of ${control.riskScore}/100.`,
         recommendations: [
-          `Review and update this control immediately as it is assigned to ${control.assignedTo}.`,
-          control.score < 70
-            ? "Score is below 70 — immediate action required to improve compliance."
-            : "Score is acceptable but can be improved with regular audits.",
-          control.riskLevel === "CRITICAL" || control.riskLevel === "HIGH"
-            ? "High risk detected — escalate to senior management for review."
+          `Review and update this control immediately as it is owned by ${control.owner}.`,
+          control.riskScore < 70
+            ? "Risk score is below 70 — immediate action required to improve."
+            : "Risk score is acceptable but can be improved with regular audits.",
+          control.priority === "CRITICAL" || control.priority === "HIGH"
+            ? "High priority detected — escalate to senior management for review."
             : "Maintain current monitoring frequency for this control.",
         ],
-        riskScore: control.score < 50 ? "HIGH" : control.score < 80 ? "MEDIUM" : "LOW",
+        riskScore: control.riskScore < 50 ? "HIGH" : control.riskScore < 80 ? "MEDIUM" : "LOW",
         nextAction:
           control.status === "OVERDUE"
             ? "Immediate escalation required"
@@ -84,18 +84,18 @@ const DetailPage = () => {
     setTimeout(() => {
       setChatLoading(false);
       let reply = "";
-      if (userMessage.toLowerCase().includes("score")) {
-        reply = `The current compliance score for "${control.title}" is ${control.score}/100. ${control.score >= 80 ? "This is a good score." : control.score >= 50 ? "This score needs improvement." : "This score is critically low."}`;
-      } else if (userMessage.toLowerCase().includes("risk")) {
-        reply = `The risk level is ${control.riskLevel}. ${control.riskLevel === "CRITICAL" ? "Escalate immediately." : control.riskLevel === "HIGH" ? "Schedule urgent review." : control.riskLevel === "MEDIUM" ? "Monitor closely." : "Standard monitoring applies."}`;
+      if (userMessage.toLowerCase().includes("score") || userMessage.toLowerCase().includes("risk")) {
+        reply = `The risk score for "${control.title}" is ${control.riskScore}/100. ${control.riskScore >= 80 ? "This is a good score." : control.riskScore >= 50 ? "This score needs improvement." : "This score is critically low."}`;
+      } else if (userMessage.toLowerCase().includes("priority")) {
+        reply = `The priority is ${control.priority}. ${control.priority === "CRITICAL" ? "Escalate immediately." : control.priority === "HIGH" ? "Schedule urgent review." : control.priority === "MEDIUM" ? "Monitor closely." : "Standard monitoring applies."}`;
       } else if (userMessage.toLowerCase().includes("status")) {
         reply = `The current status is ${control.status}. ${control.status === "OVERDUE" ? "Immediate action needed!" : control.status === "ACTIVE" ? "Actively being monitored." : control.status === "PENDING" ? "Pending review." : "Currently inactive."}`;
-      } else if (userMessage.toLowerCase().includes("assign") || userMessage.toLowerCase().includes("who")) {
-        reply = `This control is assigned to ${control.assignedTo}. They are the responsible owner.`;
+      } else if (userMessage.toLowerCase().includes("owner") || userMessage.toLowerCase().includes("who")) {
+        reply = `This control is owned by ${control.owner}. They are the responsible owner.`;
       } else if (userMessage.toLowerCase().includes("recommend")) {
-        reply = `I recommend: 1) ${control.score < 70 ? "Urgently improve compliance score." : "Maintain current procedures."} 2) ${control.riskLevel === "HIGH" || control.riskLevel === "CRITICAL" ? "Escalate risk to management." : "Continue regular assessments."} 3) Ensure ${control.assignedTo} reviews within 7 days.`;
+        reply = `I recommend: 1) ${control.riskScore < 70 ? "Urgently improve risk score." : "Maintain current procedures."} 2) ${control.priority === "HIGH" || control.priority === "CRITICAL" ? "Escalate priority to management." : "Continue regular assessments."} 3) Ensure ${control.owner} reviews within 7 days.`;
       } else {
-        reply = `"${control.title}" has a score of ${control.score}/100, ${control.riskLevel} risk, and is ${control.status}. Assigned to ${control.assignedTo}. Ask me about score, risk, status, or recommendations.`;
+        reply = `"${control.title}" has a risk score of ${control.riskScore}/100, ${control.priority} priority, and is ${control.status}. Owned by ${control.owner}. Ask me about risk, priority, status, or recommendations.`;
       }
       setChatHistory((prev) => [...prev, { role: "ai", message: reply }]);
     }, 1500);
@@ -117,8 +117,8 @@ const DetailPage = () => {
               <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusBadge(control.status)}`}>
                 {control.status}
               </span>
-              <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getRiskBadge(control.riskLevel)}`}>
-                {control.riskLevel} RISK
+              <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getRiskBadge(control.priority)}`}>
+                {control.priority}
               </span>
               <button
                 onClick={() => navigate("/edit", { state: control })}
@@ -135,15 +135,15 @@ const DetailPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
           <div className="bg-white rounded-2xl shadow p-5 text-center">
-            <p className="text-sm text-gray-500 mb-2">Compliance Score</p>
+            <p className="text-sm text-gray-500 mb-2">Risk Score</p>
             <p className="text-4xl font-bold text-[#1B4F8A] mb-3">
-              {control.score}<span className="text-lg text-gray-400">/100</span>
+              {control.riskScore}<span className="text-lg text-gray-400">/100</span>
             </p>
             <div className="w-full bg-gray-200 rounded-full h-3">
-              <div className={`h-3 rounded-full ${getScoreColor(control.score)}`} style={{ width: `${control.score}%` }} />
+              <div className={`h-3 rounded-full ${getScoreColor(control.riskScore)}`} style={{ width: `${control.riskScore}%` }} />
             </div>
             <p className="text-xs text-gray-400 mt-2">
-              {control.score >= 80 ? "✅ Good" : control.score >= 50 ? "⚠️ Needs Attention" : "❌ Critical"}
+              {control.riskScore >= 80 ? "✅ Good" : control.riskScore >= 50 ? "⚠️ Needs Attention" : "❌ Critical"}
             </p>
           </div>
 
@@ -161,12 +161,12 @@ const DetailPage = () => {
           </div>
 
           <div className="bg-white rounded-2xl shadow p-5 text-center">
-            <p className="text-sm text-gray-500 mb-2">Assigned To</p>
+            <p className="text-sm text-gray-500 mb-2">Owner</p>
             <div className="flex items-center justify-center gap-2 mt-2">
               <div className="w-10 h-10 rounded-full bg-[#1B4F8A] text-white flex items-center justify-center font-bold text-lg">
-                {control.assignedTo.charAt(0).toUpperCase()}
+                {control.owner.charAt(0).toUpperCase()}
               </div>
-              <p className="text-lg font-semibold text-gray-700">{control.assignedTo}</p>
+              <p className="text-lg font-semibold text-gray-700">{control.owner}</p>
             </div>
             <p className="text-xs text-gray-400 mt-3">Responsible owner</p>
           </div>

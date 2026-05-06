@@ -28,11 +28,17 @@
 
 /* ✅ Base body */
 
-body {
-    background-color: var(--brand-bg);
-    color: #1f2937;
-    margin: 0;
-    padding: 0;
+html, body {
+    background-color: #f9fafb !important;
+    color: #1f2937 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 100vh !important;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 
@@ -141,20 +147,4 @@ tr:hover {
 
 .animate-bounce {
     animation: bounce 0.8s infinite;
-}
-
-
-/* ✅ Spin animation for loading spinner */
-
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.animate-spin {
-    animation: spin 1s linear infinite;
 }

@@ -15,22 +15,25 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
+  console.log("App component is rendering!");
   return (
-    <ErrorBoundary>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
-          <Route path="/add" element={<ProtectedRoute><AddPage /></ProtectedRoute>} />
-          <Route path="/edit" element={<ProtectedRoute><EditPage /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/detail" element={<ProtectedRoute><DetailPage /></ProtectedRoute>} />
-          <Route path="/report" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
-          <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-      </BrowserRouter>
-    </ErrorBoundary>
+    <div style={{ minHeight: "100vh", backgroundColor: "#f9fafb" }}>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
+            <Route path="/add" element={<ProtectedRoute><AddPage /></ProtectedRoute>} />
+            <Route path="/edit" element={<ProtectedRoute><EditPage /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/detail" element={<ProtectedRoute><DetailPage /></ProtectedRoute>} />
+            <Route path="/report" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to="/login" />} />
+          </Routes>
+        </BrowserRouter>
+      </ErrorBoundary>
+    </div>
   );
 }
 
